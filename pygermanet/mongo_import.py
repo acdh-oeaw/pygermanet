@@ -636,16 +636,21 @@ def main():
              'GermaNet .xml files')
 
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option('--host', default=None,
+    parser.add_option('--host', dest='host', default='localhost',
                       help='hostname or IP address of the MongoDB instance '
                       'where the GermaNet database will be inserted '
                       '(default: %default)')
-    parser.add_option('--port', type='int', default=None,
+    parser.add_option('--port', dest='port', type='int', default=27017,
                       help='port number of the MongoDB instance where the '
                       'GermaNet database will be inserted (default: %default)')
     parser.add_option('--database', dest='database_name', default='germanet',
                       help='the name of the database on the MongoDB instance '
                       'where GermaNet will be stored (default: %default)')
+    parser.add_option('--user', dest='user_name', default='germanet',
+                      help='the name of the databaseuser on the MongoDB instance '
+                      'where GermaNet will be stored (default: %default)')
+    parser.add_option('--pw', dest='pw', default=None,
+                      help='the passwort for you germanet database')
     (options, args) = parser.parse_args()
 
     if len(args) != 1:
@@ -653,7 +658,12 @@ def main():
         sys.exit(1)
     xml_path = args[0]
 
-    client = MongoClient(options.host, options.port)
+    client = MongoClient('mongodb://{}:{}@{}:{}/'.format(
+        options.user_name,
+        options.pw,
+        options.host,
+        options.port
+    ))
     germanet_db = client[options.database_name]
 
     lex_files, gn_rels_file, wiktionary_files, ili_files = \
