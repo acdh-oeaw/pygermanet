@@ -3,5 +3,4 @@
 .DS_Store
 /build/
 /mongodb/
-/pygermanet.egg-info/
 /scripts/sdewac-treetagger.tsv.gz
