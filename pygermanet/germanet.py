@@ -26,16 +26,18 @@ LONG_POS_TO_SHORT = {
     'adj':    'j',
     }
 
-SHORT_POS_TO_LONG  = dict((v, k) for (k, v) in LONG_POS_TO_SHORT.items())
+SHORT_POS_TO_LONG = dict((v, k) for (k, v) in LONG_POS_TO_SHORT.items())
 
 DEFAULT_CACHE_SIZE = 100
 
 GERMANET_METAINFO_IGNORE_KEYS = set(['_id'])
 
+
 class GermaNet(object):
+
     '''A class representing the GermaNet database.'''
 
-    def __init__(self, mongo_db, cache_size = DEFAULT_CACHE_SIZE):
+    def __init__(self, mongo_db, cache_size=DEFAULT_CACHE_SIZE):
         '''
         Creates a new GermaNet object.
 
@@ -43,9 +45,9 @@ class GermaNet(object):
         - `mongo_db`: a pymongo.database.Database object containing
           the GermaNet lexicon
         '''
-        self._mongo_db      = mongo_db
-        self._lemma_cache   = None
-        self._synset_cache  = None
+        self._mongo_db = mongo_db
+        self._lemma_cache = None
+        self._synset_cache = None
         self.max_min_depths = {}
         try:
             self.__dict__.update((k, v) for (k, v)
@@ -56,7 +58,7 @@ class GermaNet(object):
             # the mongo DB
             pass
         try:
-            self._lemma_cache  = repoze.lru.LRUCache(cache_size)
+            self._lemma_cache = repoze.lru.LRUCache(cache_size)
             self._synset_cache = repoze.lru.LRUCache(cache_size)
         except NameError:
             pass
@@ -79,7 +81,7 @@ class GermaNet(object):
         '''
         if type(new_value) == int and 0 < new_value:
             if self._lemma_cache is not None:
-                self._lemma_cache  = repoze.lru.LRUCache(new_value)
+                self._lemma_cache = repoze.lru.LRUCache(new_value)
                 self._synset_cache = repoze.lru.LRUCache(new_value)
 
     def all_lemmas(self):
@@ -89,7 +91,7 @@ class GermaNet(object):
         for lemma_dict in self._mongo_db.lexunits.find():
             yield Lemma(self, lemma_dict)
 
-    def lemmas(self, lemma, pos = None):
+    def lemmas(self, lemma, pos=None):
         '''
         Looks up lemmas in the GermaNet database.
 
@@ -100,7 +102,7 @@ class GermaNet(object):
         if pos is not None:
             if pos not in SHORT_POS_TO_LONG:
                 return None
-            pos         = SHORT_POS_TO_LONG[pos]
+            pos = SHORT_POS_TO_LONG[pos]
             lemma_dicts = self._mongo_db.lexunits.find({'orthForm': lemma,
                                                         'category': pos})
         else:
@@ -114,7 +116,7 @@ class GermaNet(object):
         for synset_dict in self._mongo_db.synsets.find():
             yield Synset(self, synset_dict)
 
-    def synsets(self, lemma, pos = None):
+    def synsets(self, lemma, pos=None):
         '''
         Looks up synsets in the GermaNet database.
 
@@ -142,8 +144,8 @@ class GermaNet(object):
         lemma, pos, sensenum = parts
         if not sensenum.isdigit() or pos not in SHORT_POS_TO_LONG:
             return None
-        sensenum   = int(sensenum, 10)
-        pos        = SHORT_POS_TO_LONG[pos]
+        sensenum = int(sensenum, 10)
+        pos = SHORT_POS_TO_LONG[pos]
         lemma_dict = self._mongo_db.lexunits.find_one({'orthForm': lemma,
                                                        'category': pos,
                                                        'sense':    sensenum})
@@ -207,11 +209,13 @@ class GermaNet(object):
         else:
             return [word]
 
+
 # rename some of the fields in the MongoDB dictionary
 SYNSET_MEMBER_REWRITES = {
     'lexunits': '_lexunits',
     'rels':     '_rels',
     }
+
 
 @functools.total_ordering
 class Synset(object):
@@ -226,14 +230,14 @@ class Synset(object):
         - `germanet`: a GermaNet object
         - `db_dict`:
         '''
-        self._germanet    = germanet
-        self._id          = None
-        self._rels        = []
-        self.category     = None
-        self.gn_class     = None
-        self.id           = None
-        self.infocont     = 0.
-        self._lexunits    = None
+        self._germanet = germanet
+        self._id = None
+        self._rels = []
+        self.category = None
+        self.gn_class = None
+        self.id = None
+        self.infocont = 0.
+        self._lexunits = None
         self.__dict__.update((SYNSET_MEMBER_REWRITES.get(k, k), v)
                              for (k, v) in db_dict.items())
 
@@ -254,7 +258,7 @@ class Synset(object):
         '''
         return LONG_POS_TO_SHORT[self.category]
 
-    def rels(self, rel_name = None):
+    def rels(self, rel_name=None):
         '''
         Returns a list of lexical relations in this Synset.  If
         `rel_name` is specified, returns a list of Synsets which are
@@ -273,33 +277,60 @@ class Synset(object):
                     for (name, mongo_id) in self._rels]
 
     @property
-    def causes(self):             return self.rels('causes')
+    def causes(self):
+        return self.rels('causes')
+
     @property
-    def entails(self):            return self.rels('entails')
+    def entails(self):
+        return self.rels('entails')
+
     @property
-    def component_holonyms(self): return self.rels('has_component_holonym')
+    def component_holonyms(self):
+        return self.rels('has_component_holonym')
+
     @property
-    def component_meronyms(self): return self.rels('has_component_meronym')
+    def component_meronyms(self):
+        return self.rels('has_component_meronym')
+
     @property
-    def hypernyms(self):          return self.rels('has_hypernym')
+    def hypernyms(self):
+        return self.rels('has_hypernym')
+
     @property
-    def hyponyms(self):           return self.rels('has_hyponym')
+    def hyponyms(self):
+        return self.rels('has_hyponym')
+
     @property
-    def member_holonyms(self):    return self.rels('has_member_holonym')
+    def member_holonyms(self):
+        return self.rels('has_member_holonym')
+
     @property
-    def member_meronyms(self):    return self.rels('has_member_meronym')
+    def member_meronyms(self):
+        return self.rels('has_member_meronym')
+
     @property
-    def portion_holonyms(self):   return self.rels('has_portion_holonym')
+    def portion_holonyms(self):
+        return self.rels('has_portion_holonym')
+
     @property
-    def portion_meronyms(self):   return self.rels('has_portion_meronym')
+    def portion_meronyms(self):
+        return self.rels('has_portion_meronym')
+
     @property
-    def substance_holonyms(self): return self.rels('has_substance_holonym')
+    def substance_holonyms(self):
+        return self.rels('has_substance_holonym')
+
     @property
-    def substance_meronyms(self): return self.rels('has_substance_meronym')
+    def substance_meronyms(self):
+        return self.rels('has_substance_meronym')
+
     @property
-    def entailed_bys(self):       return self.rels('is_entailed_by')
+    def entailed_bys(self):
+        return self.rels('is_entailed_by')
+
     @property
-    def related_tos(self):        return self.rels('is_related_to')
+    def related_tos(self):
+        return self.rels('is_related_to')
 
     @property
     def hypernym_paths(self):
@@ -388,10 +419,9 @@ class Synset(object):
         '''Helper method for common_hypernyms.'''
         if not isinstance(other, Synset):
             return dict()
-        self_dists  = dict(self.hypernym_distances)
+        self_dists = dict(self.hypernym_distances)
         other_dists = dict(other.hypernym_distances)
-        common      = dict((synset, 0) for synset in (set(self_dists) &
-                                                      set(other_dists)))
+        common = dict((synset, 0) for synset in (set(self_dists) & set(other_dists)))
         # update the distance values
         for synset in common:
             common[synset] = self_dists[synset] + other_dists[synset]
@@ -419,16 +449,14 @@ class Synset(object):
         '''
         if not isinstance(other, Synset):
             return set()
-        self_hypers   = set(synset for path in self.hypernym_paths
-                            for synset in path)
-        other_hypers  = set(synset for path in other.hypernym_paths
-                            for synset in path)
+        self_hypers = set(synset for path in self.hypernym_paths for synset in path)
+        other_hypers = set(synset for path in other.hypernym_paths for synset in path)
         common_hypers = self_hypers & other_hypers
         common_hypers = [(synset.min_depth, synset)
                          for synset in common_hypers]
         if not common_hypers:
             return set()
-        max_depth     = max(x[0] for x in common_hypers)
+        max_depth = max(x[0] for x in common_hypers)
         return set(synset for (depth, synset) in common_hypers
                    if depth == max_depth)
 
@@ -501,7 +529,7 @@ class Synset(object):
             return 0.
         # find the lowest concept which subsumes both this synset and
         # ``other``;
-        #common_hypers = self.lowest_common_hypernyms(other)
+        # common_hypers = self.lowest_common_hypernyms(other)
         # specifically, we choose the hypernym "closest" to this
         # synset and ``other``, not the hypernym which is furthest
         # away from GNROOT (as is done by lowest_common_hypernyms)
@@ -553,11 +581,13 @@ class Synset(object):
         ic_lcs = self.sim_res(other)
         return 2. * ic_lcs / (ic1 + ic2)
 
+
 # rename some of the fields in the MongoDB dictionary
 LEMMA_MEMBER_REWRITES = {
     'synset': '_synset',
     'rels':   '_rels',
     }
+
 
 @functools.total_ordering
 class Lemma(object):
@@ -572,24 +602,24 @@ class Lemma(object):
         - `germanet`: a GermaNet object
         - `db_dict`:
         '''
-        self._germanet    = germanet
-        self._id          = None
-        self._rels        = []
-        self.artificial   = None
-        self.category     = None
-        self.examples     = None
-        self.frames       = None
-        self.id           = None
-        self.namedEntity  = None
-        self.oldOrthForm  = None
-        self.oldOrthVar   = None
-        self.orthForm     = None
-        self.orthVar      = None
-        self.paraphrases  = []
-        self.sense        = None
-        self.source       = None
+        self._germanet = germanet
+        self._id = None
+        self._rels = []
+        self.artificial = None
+        self.category = None
+        self.examples = None
+        self.frames = None
+        self.id = None
+        self.namedEntity = None
+        self.oldOrthForm = None
+        self.oldOrthVar = None
+        self.orthForm = None
+        self.orthVar = None
+        self.paraphrases = []
+        self.sense = None
+        self.source = None
         self.styleMarking = None
-        self._synset      = None
+        self._synset = None
         self.__dict__.update((LEMMA_MEMBER_REWRITES.get(k, k), v)
                              for (k, v) in db_dict.items())
 
@@ -607,7 +637,7 @@ class Lemma(object):
         '''
         return LONG_POS_TO_SHORT[self.category]
 
-    def rels(self, rel_name = None):
+    def rels(self, rel_name=None):
         '''
         Returns a list of lexical relations in this Lemma.  If
         `rel_name` is specified, returns a list of Lemmas which are
@@ -626,11 +656,16 @@ class Lemma(object):
                     for (name, mongo_id) in self._rels]
 
     @property
-    def antonyms(self):    return self.rels('has_antonym')
+    def antonyms(self):
+        return self.rels('has_antonym')
+
     @property
-    def participles(self): return self.rels('has_participle')
+    def participles(self):
+        return self.rels('has_participle')
+
     @property
-    def pertainyms(self):  return self.rels('has_pertainym')
+    def pertainyms(self):
+        return self.rels('has_pertainym')
 
     def __repr__(self):
         reprstr = u'Lemma({0}.{1}.{2}.{3})'.format(
@@ -661,7 +696,8 @@ class Lemma(object):
         else:
             return False
 
-def load_germanet(host = None, port = None, database_name = 'germanet'):
+
+def load_germanet(host='localhost', port=27017, database_name='germanet', user=None, pw=None):
     '''
     Loads a GermaNet instance connected to the given MongoDB instance.
 
@@ -669,8 +705,19 @@ def load_germanet(host = None, port = None, database_name = 'germanet'):
     - `host`: the hostname of the MongoDB instance
     - `port`: the port number of the MongoDB instance
     - `database_name`: the name of the GermaNet database on the
+    - `user`: The database user
+    - `pw`: The password for a germanet database instance
       MongoDB instance
     '''
-    client      = MongoClient(host, port)
+
+    if user and pw:
+        client = MongoClient('mongodb://{}:{}@{}:{}/'.format(
+            user,
+            pw,
+            host,
+            port,
+        ))
+    else:
+        client = MongoClient(host, port)
     germanet_db = client[database_name]
     return GermaNet(germanet_db)
