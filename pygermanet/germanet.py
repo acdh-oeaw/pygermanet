@@ -711,11 +711,12 @@ def load_germanet(host='localhost', port=27017, database_name='germanet', user=N
     '''
 
     if user and pw:
-        client = MongoClient('mongodb://{}:{}@{}:{}/'.format(
+        client = MongoClient('mongodb://{}:{}@{}:{}/{}'.format(
             user,
             pw,
             host,
             port,
+            database_name
         ))
     else:
         client = MongoClient(host, port)
